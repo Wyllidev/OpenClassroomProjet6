@@ -23,7 +23,7 @@ const object_menu_items = [];
 // Séléctionne l'élément avec l'ID ".portfolio"
 const portfolio = document.getElementById('portfolio');
 
-// Création d'une div "object-menu" et lui ajoute l'ID portfolio
+// Création d'une div "object-menu", lui ajoute la class 'object-menu' et devient l'enfant de 'portfolio'
 const object_menu = document.createElement('div');
 object_menu.className = 'object-menu';
 portfolio.appendChild(object_menu);
@@ -74,7 +74,6 @@ function makeFilterFonction(object_menu_item, index) {
 
 		// Appel de la fonction "call_api_works"
 		call_api_works().then(data => {
-			console.log(data);
 			for (let i = 0; i < data.length; i++) {
 				data[i].category.id;
 				// Vérifie si l'index de la catégorie correspond à l'ID de la catégorie du projet actuel. Si oui, le projet est affiché
@@ -242,7 +241,8 @@ const addImgElements = document.querySelectorAll(
 let image = document.getElementById('imagePreview');
 
 let previewPicture = function (e) {
-	const [picture] = e.files;
+	const [picture] = e.srcElement.files;
+	const errorMsgModal = document.querySelector('.errorModal');
 	if (picture) {
 		// Affichage du preview (de l'image)
 		image.src = URL.createObjectURL(picture);
@@ -251,6 +251,7 @@ let previewPicture = function (e) {
 		addImgElements.forEach(element => {
 			element.style.display = 'none';
 		});
+		errorMsgModal.textContent = '';
 	}
 };
 
@@ -308,7 +309,7 @@ function submitWork(e) {
 	if (!token) {
 		return;
 	}
-	// Récupère les valeurs des champs : WebTransportBidirectionalStream, catégorie et image. Si l'un des champ est vide la fonction s'arrête
+	// Récupère les valeurs des champs : titre, catégorie et image. Si l'un des champ est vide la fonction s'arrête
 	let title = document.getElementById('titre').value;
 	let category = document.getElementById('categorie').value;
 	let image = document.getElementById('uploadImg').files[0];
@@ -357,10 +358,27 @@ function submitWork(e) {
 }
 // Vérifie si tous les champs du formulaire sont remplis
 function checkSubmitButton() {
+	// Types d'images valides et taille maximale
+	const validImageTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+	const maxSize = 4 * 1024 * 1024; // 4 Mo
 	const errorMsgModal = document.querySelector('.errorModal');
 	var title = document.getElementById('titre').value;
 	var category = document.getElementById('categorie').value;
 	var image = document.getElementById('uploadImg').files[0];
+	// Vérification du type de fichier
+	if (!validImageTypes.includes(image.type)) {
+		errorMsgModal.textContent =
+			'Veuillez télécharger un fichier image valide (jpg, png).';
+		deletePreviewPicture();
+		return;
+	}
+	// Vérification de la taille du fichier
+	if (image.size > maxSize) {
+		errorMsgModal.textContent =
+			'La taille du fichier ne doit pas dépasser 4 Mo.';
+		deletePreviewPicture();
+		return;
+	}
 	// Si oui, active le bouton de soumission (submitBtnWorks)
 	if (title && category && image) {
 		submitBtnWorks.removeAttribute('disabled');
@@ -381,3 +399,6 @@ document
 document
 	.getElementById('uploadImg')
 	.addEventListener('change', checkSubmitButton);
+document
+	.getElementById('uploadImg')
+	.addEventListener('change', previewPicture, true);
